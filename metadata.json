@@ -1,0 +1,6 @@
+{
+  "name": "CreditSense – Smart Credit Card Advisor",
+  "description": "A simple 3-feature personal finance tool to choose the best credit card, calculate yearly savings, and avoid interest debt traps.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
