@@ -22,7 +22,8 @@ import {
   Building2,
   Check,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  RotateCcw
 } from 'lucide-react';
 import { INDIAN_CREDIT_CARDS } from '../data/cardsData';
 import { CreditCardItem } from '../types';
@@ -184,6 +185,23 @@ export function SimpleCardRecommender({ onSelectCardForCalculator }: SimpleCardR
     setVisibleCount(6);
   };
 
+  // Helper for typing numbers directly with Indian comma formatting and clean limits
+  const handleSpendTextChange = (
+    setter: (val: number) => void,
+    rawText: string,
+    maxLimit: number = 1000000
+  ) => {
+    setActiveTemplateId('');
+    const digits = rawText.replace(/\D/g, '');
+    const num = digits === '' ? 0 : Math.min(maxLimit, parseInt(digits, 10) || 0);
+    setter(num);
+  };
+
+  const handleResetSpends = () => {
+    const defaultTpl = SPENDING_TEMPLATES.find(t => t.id === 'online_shopper') || SPENDING_TEMPLATES[0];
+    handleApplyTemplate(defaultTpl);
+  };
+
   const totalMonthlySpend = foodSpend + shoppingSpend + travelSpend + billsSpend;
   const totalAnnualSpend = totalMonthlySpend * 12;
 
@@ -333,38 +351,42 @@ export function SimpleCardRecommender({ onSelectCardForCalculator }: SimpleCardR
         </div>
 
         {/* CUSTOM SPENDS PROFILE (UP AT TOP) */}
-        <div className="mb-4 bg-[#0a192f] border border-blue-900/40 rounded-xl p-3.5 sm:p-4 shadow-lg">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3 pb-2.5 border-b border-blue-900/40">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-blue-600/20 border border-blue-500/30 text-blue-400">
-                <CreditCard className="w-4 h-4" />
+        <div className="mb-6 bg-[#0a192f] border border-blue-900/50 rounded-2xl p-4 sm:p-5 lg:p-6 shadow-xl">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3.5 border-b border-blue-900/40">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/30 text-blue-400 flex items-center justify-center shrink-0">
+                <CreditCard className="w-5 h-5" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-bold text-white">Custom Spends Profile</h3>
-                  {activeTemplateId && (
-                    <span className="text-[10px] px-2 py-0.2 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 font-semibold">
+                  <h3 className="text-base sm:text-lg font-bold text-white">Custom Spends Profile</h3>
+                  {activeTemplateId ? (
+                    <span className="text-xs px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 font-semibold">
                       Preset Active
+                    </span>
+                  ) : (
+                    <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold">
+                      Custom Values
                     </span>
                   )}
                 </div>
-                <p className="text-[11px] text-slate-400">
-                  Adjust salary and category monthly spends to auto-calculate matching cards and fee waivers.
+                <p className="text-xs sm:text-sm text-slate-300 mt-0.5">
+                  Type your exact numbers or drag sliders to auto-recalculate savings across 69+ cards.
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center justify-between sm:justify-end gap-2">
+            <div className="flex items-center flex-wrap sm:flex-nowrap justify-between sm:justify-end gap-2.5">
               <div className="flex items-center gap-2">
-                <div className="bg-[#050816] border border-blue-900/50 rounded-lg px-2.5 py-1 flex items-center gap-1.5">
-                  <span className="text-[11px] text-slate-400">Monthly:</span>
-                  <span className="text-xs font-mono text-emerald-400 font-extrabold">
+                <div className="bg-[#050816] border border-blue-900/60 rounded-xl px-3.5 py-1.5 flex items-center gap-2">
+                  <span className="text-xs text-slate-400">Monthly:</span>
+                  <span className="text-sm sm:text-base font-mono text-emerald-400 font-extrabold">
                     ₹{totalMonthlySpend.toLocaleString('en-IN')}/mo
                   </span>
                 </div>
-                <div className="bg-[#050816] border border-blue-900/50 rounded-lg px-2.5 py-1 flex items-center gap-1.5">
-                  <span className="text-[11px] text-slate-400">Annual:</span>
-                  <span className="text-xs font-mono text-white font-extrabold">
+                <div className="bg-[#050816] border border-blue-900/60 rounded-xl px-3.5 py-1.5 flex items-center gap-2">
+                  <span className="text-xs text-slate-400">Annual:</span>
+                  <span className="text-sm sm:text-base font-mono text-white font-extrabold">
                     ₹{(totalAnnualSpend / 100000).toFixed(2)}L/yr
                   </span>
                 </div>
@@ -372,150 +394,452 @@ export function SimpleCardRecommender({ onSelectCardForCalculator }: SimpleCardR
 
               <button
                 type="button"
+                onClick={handleResetSpends}
+                className="flex items-center gap-1.5 text-xs font-semibold text-slate-200 hover:text-white bg-slate-800/90 hover:bg-slate-700 border border-slate-700/70 px-3 py-1.5 rounded-xl transition-colors cursor-pointer"
+                title="Reset to default spends"
+              >
+                <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
+                <span>Reset</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => setIsSlidersExpandedOnMobile(!isSlidersExpandedOnMobile)}
-                className="sm:hidden flex items-center gap-1 text-[10px] text-blue-300 hover:text-white bg-blue-900/40 border border-blue-800/60 px-2 py-1 rounded transition-colors cursor-pointer"
-                title="Toggle spending sliders visibility on mobile"
+                className="sm:hidden flex items-center gap-1.5 text-xs font-semibold text-blue-300 hover:text-white bg-blue-900/50 border border-blue-800/60 px-3 py-1.5 rounded-xl transition-colors cursor-pointer"
+                title="Toggle spending inputs visibility on mobile"
               >
                 <span>{isSlidersExpandedOnMobile ? 'Hide' : 'Edit'}</span>
                 {isSlidersExpandedOnMobile ? (
-                  <ChevronUp className="w-3 h-3 text-blue-400" />
+                  <ChevronUp className="w-3.5 h-3.5 text-blue-400" />
                 ) : (
-                  <ChevronDown className="w-3 h-3 text-blue-400" />
+                  <ChevronDown className="w-3.5 h-3.5 text-blue-400" />
                 )}
               </button>
             </div>
           </div>
 
-          {/* 5 Interactive Sliders in responsive grid */}
-          <div className={`${isSlidersExpandedOnMobile ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3' : 'hidden sm:grid sm:grid-cols-2 lg:grid-cols-5 gap-3'}`}>
+          {/* 5 Spacious, Typeable Category Tiles */}
+          <div className={`${isSlidersExpandedOnMobile ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5 sm:gap-4' : 'hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5 sm:gap-4'}`}>
+            
             {/* 1. Monthly Salary */}
-            <div className="bg-[#050816]/70 border border-blue-900/40 rounded-lg p-2.5 flex flex-col justify-between">
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-slate-300 text-[11px] font-medium">💼 Monthly Salary</span>
-                <span className="font-mono font-bold text-blue-300 text-xs">₹{monthlyIncome.toLocaleString('en-IN')}</span>
+            <div className="bg-[#050b18] border-2 border-blue-900/60 hover:border-blue-500/60 rounded-2xl p-4 flex flex-col justify-between transition-all duration-200 shadow-md group hover:shadow-blue-950/40">
+              <div className="flex items-center justify-between gap-2 mb-2.5">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className="w-9 h-9 rounded-xl bg-blue-950/90 border border-blue-800/60 flex items-center justify-center text-xl select-none shrink-0 shadow-inner">
+                    💼
+                  </span>
+                  <div>
+                    <label htmlFor="input-salary" className="text-base font-black text-white block leading-tight cursor-pointer whitespace-nowrap">
+                      Salary
+                    </label>
+                    <span className="text-[11px] text-blue-300/90 font-mono font-medium block">
+                      Take-Home Income
+                    </span>
+                  </div>
+                </div>
               </div>
-              <input
-                type="range"
-                min="15000"
-                max="250000"
-                step="5000"
-                value={monthlyIncome}
-                onChange={(e) => {
-                  setActiveTemplateId('');
-                  setMonthlyIncome(Number(e.target.value));
-                }}
-                className="w-full accent-blue-500 cursor-pointer h-1.5 bg-slate-800 rounded-lg"
-              />
-              <div className="flex justify-between text-[9px] text-slate-500 mt-1 font-mono">
-                <span>₹15k</span>
-                <span>₹2.5L+</span>
+
+              {/* Typeable Input */}
+              <div className="flex items-center justify-between bg-[#0a152d] border border-blue-900/80 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-500/30 rounded-xl px-3 py-2 sm:py-2.5 my-2.5 transition-all">
+                <div className="flex items-center flex-1 min-w-0 mr-1.5">
+                  <span className="text-base sm:text-lg font-mono font-bold text-blue-400 select-none mr-1.5">₹</span>
+                  <input
+                    id="input-salary"
+                    type="text"
+                    inputMode="numeric"
+                    value={monthlyIncome === 0 ? '' : monthlyIncome.toLocaleString('en-IN')}
+                    onChange={(e) => handleSpendTextChange(setMonthlyIncome, e.target.value, 1000000)}
+                    placeholder="0"
+                    className="w-full text-base sm:text-lg font-mono font-extrabold text-white bg-transparent focus:outline-none tracking-tight"
+                  />
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className="text-xs text-slate-400 font-mono select-none">/mo</span>
+                  <div className="flex items-center gap-0.5 pl-1.5 border-l border-blue-900/60">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTemplateId('');
+                        setMonthlyIncome(prev => Math.max(0, prev - 5000));
+                      }}
+                      className="w-5 h-5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold cursor-pointer transition-colors"
+                      title="Decrease by ₹5,000"
+                    >
+                      -
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTemplateId('');
+                        setMonthlyIncome(prev => Math.min(1000000, prev + 5000));
+                      }}
+                      className="w-5 h-5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold cursor-pointer transition-colors"
+                      title="Increase by ₹5,000"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Range Slider */}
+              <div>
+                <input
+                  type="range"
+                  min="15000"
+                  max="250000"
+                  step="5000"
+                  value={Math.min(250000, Math.max(15000, monthlyIncome))}
+                  onChange={(e) => {
+                    setActiveTemplateId('');
+                    setMonthlyIncome(Number(e.target.value));
+                  }}
+                  className="w-full accent-blue-500 cursor-pointer h-2 bg-slate-800 rounded-lg block"
+                />
+                <div className="flex justify-between text-xs text-slate-400 font-mono mt-1.5">
+                  <span>₹15k</span>
+                  <span>₹2.5L+</span>
+                </div>
               </div>
             </div>
 
             {/* 2. Online Shopping */}
-            <div className="bg-[#050816]/70 border border-blue-900/40 rounded-lg p-2.5 flex flex-col justify-between">
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-slate-300 text-[11px] font-medium">🛍️ Online Shopping</span>
-                <span className="font-mono font-bold text-white text-xs">₹{shoppingSpend.toLocaleString('en-IN')}</span>
+            <div className="bg-[#050b18] border-2 border-blue-900/60 hover:border-blue-500/60 rounded-2xl p-4 flex flex-col justify-between transition-all duration-200 shadow-md group hover:shadow-blue-950/40">
+              <div className="flex items-center justify-between gap-2 mb-2.5">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className="w-9 h-9 rounded-xl bg-purple-950/90 border border-purple-800/60 flex items-center justify-center text-xl select-none shrink-0 shadow-inner">
+                    🛍️
+                  </span>
+                  <div>
+                    <label htmlFor="input-shopping" className="text-base font-black text-white block leading-tight cursor-pointer whitespace-nowrap">
+                      Shopping
+                    </label>
+                    <span className="text-[11px] text-purple-300/90 font-mono font-medium block">
+                      Amazon & Flipkart
+                    </span>
+                  </div>
+                </div>
               </div>
-              <input
-                type="range"
-                min="0"
-                max="60000"
-                step="1000"
-                value={shoppingSpend}
-                onChange={(e) => {
-                  setActiveTemplateId('');
-                  setShoppingSpend(Number(e.target.value));
-                }}
-                className="w-full accent-blue-500 cursor-pointer h-1.5 bg-slate-800 rounded-lg"
-              />
-              <div className="flex justify-between text-[9px] text-slate-500 mt-1 font-mono">
-                <span>₹0</span>
-                <span>₹60k</span>
+
+              {/* Typeable Input */}
+              <div className="flex items-center justify-between bg-[#0a152d] border border-blue-900/80 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-500/30 rounded-xl px-3 py-2 sm:py-2.5 my-2.5 transition-all">
+                <div className="flex items-center flex-1 min-w-0 mr-1.5">
+                  <span className="text-base sm:text-lg font-mono font-bold text-purple-400 select-none mr-1.5">₹</span>
+                  <input
+                    id="input-shopping"
+                    type="text"
+                    inputMode="numeric"
+                    value={shoppingSpend === 0 ? '' : shoppingSpend.toLocaleString('en-IN')}
+                    onChange={(e) => handleSpendTextChange(setShoppingSpend, e.target.value, 500000)}
+                    placeholder="0"
+                    className="w-full text-base sm:text-lg font-mono font-extrabold text-white bg-transparent focus:outline-none tracking-tight"
+                  />
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className="text-xs text-slate-400 font-mono select-none">/mo</span>
+                  <div className="flex items-center gap-0.5 pl-1.5 border-l border-blue-900/60">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTemplateId('');
+                        setShoppingSpend(prev => Math.max(0, prev - 1000));
+                      }}
+                      className="w-5 h-5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold cursor-pointer transition-colors"
+                      title="Decrease by ₹1,000"
+                    >
+                      -
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTemplateId('');
+                        setShoppingSpend(prev => Math.min(500000, prev + 1000));
+                      }}
+                      className="w-5 h-5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold cursor-pointer transition-colors"
+                      title="Increase by ₹1,000"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Range Slider */}
+              <div>
+                <input
+                  type="range"
+                  min="0"
+                  max="60000"
+                  step="1000"
+                  value={Math.min(60000, shoppingSpend)}
+                  onChange={(e) => {
+                    setActiveTemplateId('');
+                    setShoppingSpend(Number(e.target.value));
+                  }}
+                  className="w-full accent-blue-500 cursor-pointer h-2 bg-slate-800 rounded-lg block"
+                />
+                <div className="flex justify-between text-xs text-slate-400 font-mono mt-1.5">
+                  <span>₹0</span>
+                  <span>₹60k+</span>
+                </div>
               </div>
             </div>
 
-            {/* 3. Food & Delivery */}
-            <div className="bg-[#050816]/70 border border-blue-900/40 rounded-lg p-2.5 flex flex-col justify-between">
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-slate-300 text-[11px] font-medium">🍕 Food & Delivery</span>
-                <span className="font-mono font-bold text-white text-xs">₹{foodSpend.toLocaleString('en-IN')}</span>
+            {/* 3. Food & Dining */}
+            <div className="bg-[#050b18] border-2 border-blue-900/60 hover:border-blue-500/60 rounded-2xl p-4 flex flex-col justify-between transition-all duration-200 shadow-md group hover:shadow-blue-950/40">
+              <div className="flex items-center justify-between gap-2 mb-2.5">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className="w-9 h-9 rounded-xl bg-amber-950/90 border border-amber-800/60 flex items-center justify-center text-xl select-none shrink-0 shadow-inner">
+                    🍕
+                  </span>
+                  <div>
+                    <label htmlFor="input-food" className="text-base font-black text-white block leading-tight cursor-pointer whitespace-nowrap">
+                      Food & Dining
+                    </label>
+                    <span className="text-[11px] text-amber-300/90 font-mono font-medium block">
+                      Swiggy, Zomato & Cafes
+                    </span>
+                  </div>
+                </div>
               </div>
-              <input
-                type="range"
-                min="0"
-                max="40000"
-                step="1000"
-                value={foodSpend}
-                onChange={(e) => {
-                  setActiveTemplateId('');
-                  setFoodSpend(Number(e.target.value));
-                }}
-                className="w-full accent-blue-500 cursor-pointer h-1.5 bg-slate-800 rounded-lg"
-              />
-              <div className="flex justify-between text-[9px] text-slate-500 mt-1 font-mono">
-                <span>₹0</span>
-                <span>₹40k</span>
+
+              {/* Typeable Input */}
+              <div className="flex items-center justify-between bg-[#0a152d] border border-blue-900/80 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-500/30 rounded-xl px-3 py-2 sm:py-2.5 my-2.5 transition-all">
+                <div className="flex items-center flex-1 min-w-0 mr-1.5">
+                  <span className="text-base sm:text-lg font-mono font-bold text-amber-400 select-none mr-1.5">₹</span>
+                  <input
+                    id="input-food"
+                    type="text"
+                    inputMode="numeric"
+                    value={foodSpend === 0 ? '' : foodSpend.toLocaleString('en-IN')}
+                    onChange={(e) => handleSpendTextChange(setFoodSpend, e.target.value, 300000)}
+                    placeholder="0"
+                    className="w-full text-base sm:text-lg font-mono font-extrabold text-white bg-transparent focus:outline-none tracking-tight"
+                  />
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className="text-xs text-slate-400 font-mono select-none">/mo</span>
+                  <div className="flex items-center gap-0.5 pl-1.5 border-l border-blue-900/60">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTemplateId('');
+                        setFoodSpend(prev => Math.max(0, prev - 1000));
+                      }}
+                      className="w-5 h-5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold cursor-pointer transition-colors"
+                      title="Decrease by ₹1,000"
+                    >
+                      -
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTemplateId('');
+                        setFoodSpend(prev => Math.min(300000, prev + 1000));
+                      }}
+                      className="w-5 h-5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold cursor-pointer transition-colors"
+                      title="Increase by ₹1,000"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Range Slider */}
+              <div>
+                <input
+                  type="range"
+                  min="0"
+                  max="40000"
+                  step="1000"
+                  value={Math.min(40000, foodSpend)}
+                  onChange={(e) => {
+                    setActiveTemplateId('');
+                    setFoodSpend(Number(e.target.value));
+                  }}
+                  className="w-full accent-blue-500 cursor-pointer h-2 bg-slate-800 rounded-lg block"
+                />
+                <div className="flex justify-between text-xs text-slate-400 font-mono mt-1.5">
+                  <span>₹0</span>
+                  <span>₹40k+</span>
+                </div>
               </div>
             </div>
 
             {/* 4. Travel & Commute */}
-            <div className="bg-[#050816]/70 border border-blue-900/40 rounded-lg p-2.5 flex flex-col justify-between">
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-slate-300 text-[11px] font-medium">✈️ Travel & Commute</span>
-                <span className="font-mono font-bold text-white text-xs">₹{travelSpend.toLocaleString('en-IN')}</span>
+            <div className="bg-[#050b18] border-2 border-blue-900/60 hover:border-blue-500/60 rounded-2xl p-4 flex flex-col justify-between transition-all duration-200 shadow-md group hover:shadow-blue-950/40">
+              <div className="flex items-center justify-between gap-2 mb-2.5">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className="w-9 h-9 rounded-xl bg-cyan-950/90 border border-cyan-800/60 flex items-center justify-center text-xl select-none shrink-0 shadow-inner">
+                    ✈️
+                  </span>
+                  <div>
+                    <label htmlFor="input-travel" className="text-base font-black text-white block leading-tight cursor-pointer whitespace-nowrap">
+                      Travel
+                    </label>
+                    <span className="text-[11px] text-cyan-300/90 font-mono font-medium block">
+                      Flights, Hotels & Uber
+                    </span>
+                  </div>
+                </div>
               </div>
-              <input
-                type="range"
-                min="0"
-                max="60000"
-                step="1000"
-                value={travelSpend}
-                onChange={(e) => {
-                  setActiveTemplateId('');
-                  setTravelSpend(Number(e.target.value));
-                }}
-                className="w-full accent-blue-500 cursor-pointer h-1.5 bg-slate-800 rounded-lg"
-              />
-              <div className="flex justify-between text-[9px] text-slate-500 mt-1 font-mono">
-                <span>₹0</span>
-                <span>₹60k</span>
+
+              {/* Typeable Input */}
+              <div className="flex items-center justify-between bg-[#0a152d] border border-blue-900/80 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-500/30 rounded-xl px-3 py-2 sm:py-2.5 my-2.5 transition-all">
+                <div className="flex items-center flex-1 min-w-0 mr-1.5">
+                  <span className="text-base sm:text-lg font-mono font-bold text-cyan-400 select-none mr-1.5">₹</span>
+                  <input
+                    id="input-travel"
+                    type="text"
+                    inputMode="numeric"
+                    value={travelSpend === 0 ? '' : travelSpend.toLocaleString('en-IN')}
+                    onChange={(e) => handleSpendTextChange(setTravelSpend, e.target.value, 500000)}
+                    placeholder="0"
+                    className="w-full text-base sm:text-lg font-mono font-extrabold text-white bg-transparent focus:outline-none tracking-tight"
+                  />
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className="text-xs text-slate-400 font-mono select-none">/mo</span>
+                  <div className="flex items-center gap-0.5 pl-1.5 border-l border-blue-900/60">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTemplateId('');
+                        setTravelSpend(prev => Math.max(0, prev - 1000));
+                      }}
+                      className="w-5 h-5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold cursor-pointer transition-colors"
+                      title="Decrease by ₹1,000"
+                    >
+                      -
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTemplateId('');
+                        setTravelSpend(prev => Math.min(500000, prev + 1000));
+                      }}
+                      className="w-5 h-5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold cursor-pointer transition-colors"
+                      title="Increase by ₹1,000"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Range Slider */}
+              <div>
+                <input
+                  type="range"
+                  min="0"
+                  max="60000"
+                  step="1000"
+                  value={Math.min(60000, travelSpend)}
+                  onChange={(e) => {
+                    setActiveTemplateId('');
+                    setTravelSpend(Number(e.target.value));
+                  }}
+                  className="w-full accent-blue-500 cursor-pointer h-2 bg-slate-800 rounded-lg block"
+                />
+                <div className="flex justify-between text-xs text-slate-400 font-mono mt-1.5">
+                  <span>₹0</span>
+                  <span>₹60k+</span>
+                </div>
               </div>
             </div>
 
             {/* 5. Utility Bills & UPI */}
-            <div className="bg-[#050816]/70 border border-blue-900/40 rounded-lg p-2.5 flex flex-col justify-between">
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-slate-300 text-[11px] font-medium">⚡ Bills, UPI & Utilities</span>
-                <span className="font-mono font-bold text-white text-xs">₹{billsSpend.toLocaleString('en-IN')}</span>
+            <div className="bg-[#050b18] border-2 border-blue-900/60 hover:border-blue-500/60 rounded-2xl p-4 flex flex-col justify-between transition-all duration-200 shadow-md group hover:shadow-blue-950/40">
+              <div className="flex items-center justify-between gap-2 mb-2.5">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className="w-9 h-9 rounded-xl bg-emerald-950/90 border border-emerald-800/60 flex items-center justify-center text-xl select-none shrink-0 shadow-inner">
+                    ⚡
+                  </span>
+                  <div>
+                    <label htmlFor="input-bills" className="text-base font-black text-white block leading-tight cursor-pointer whitespace-nowrap">
+                      Bills & UPI
+                    </label>
+                    <span className="text-[11px] text-emerald-300/90 font-mono font-medium block">
+                      Power, Wifi & Recharge
+                    </span>
+                  </div>
+                </div>
               </div>
-              <input
-                type="range"
-                min="0"
-                max="35000"
-                step="500"
-                value={billsSpend}
-                onChange={(e) => {
-                  setActiveTemplateId('');
-                  setBillsSpend(Number(e.target.value));
-                }}
-                className="w-full accent-blue-500 cursor-pointer h-1.5 bg-slate-800 rounded-lg"
-              />
-              <div className="flex justify-between text-[9px] text-slate-500 mt-1 font-mono">
-                <span>₹0</span>
-                <span>₹35k</span>
+
+              {/* Typeable Input */}
+              <div className="flex items-center justify-between bg-[#0a152d] border border-blue-900/80 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-500/30 rounded-xl px-3 py-2 sm:py-2.5 my-2.5 transition-all">
+                <div className="flex items-center flex-1 min-w-0 mr-1.5">
+                  <span className="text-base sm:text-lg font-mono font-bold text-emerald-400 select-none mr-1.5">₹</span>
+                  <input
+                    id="input-bills"
+                    type="text"
+                    inputMode="numeric"
+                    value={billsSpend === 0 ? '' : billsSpend.toLocaleString('en-IN')}
+                    onChange={(e) => handleSpendTextChange(setBillsSpend, e.target.value, 300000)}
+                    placeholder="0"
+                    className="w-full text-base sm:text-lg font-mono font-extrabold text-white bg-transparent focus:outline-none tracking-tight"
+                  />
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className="text-xs text-slate-400 font-mono select-none">/mo</span>
+                  <div className="flex items-center gap-0.5 pl-1.5 border-l border-blue-900/60">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTemplateId('');
+                        setBillsSpend(prev => Math.max(0, prev - 500));
+                      }}
+                      className="w-5 h-5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold cursor-pointer transition-colors"
+                      title="Decrease by ₹500"
+                    >
+                      -
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTemplateId('');
+                        setBillsSpend(prev => Math.min(300000, prev + 500));
+                      }}
+                      className="w-5 h-5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-xs font-bold cursor-pointer transition-colors"
+                      title="Increase by ₹500"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Range Slider */}
+              <div>
+                <input
+                  type="range"
+                  min="0"
+                  max="35000"
+                  step="500"
+                  value={Math.min(35000, billsSpend)}
+                  onChange={(e) => {
+                    setActiveTemplateId('');
+                    setBillsSpend(Number(e.target.value));
+                  }}
+                  className="w-full accent-blue-500 cursor-pointer h-2 bg-slate-800 rounded-lg block"
+                />
+                <div className="flex justify-between text-xs text-slate-400 font-mono mt-1.5">
+                  <span>₹0</span>
+                  <span>₹35k+</span>
+                </div>
               </div>
             </div>
+
           </div>
         </div>
 
         {/* SEARCH, BANK SELECTOR, SORT & CATEGORY TABS */}
-        <div className="bg-[#0a192f] border border-blue-900/40 rounded-xl p-3 space-y-2.5 shadow-sm mb-4">
-          <div className="flex flex-col sm:flex-row items-center gap-2">
+        <div className="bg-[#0a192f] border border-blue-900/40 rounded-2xl p-4 sm:p-5 space-y-3.5 shadow-md mb-6">
+          <div className="flex flex-col sm:flex-row items-center gap-2.5">
             {/* Search Input */}
             <div className="relative flex-1 w-full">
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 placeholder="Search card name, bank, perk..."
@@ -524,12 +848,12 @@ export function SimpleCardRecommender({ onSelectCardForCalculator }: SimpleCardR
                   setSearchQuery(e.target.value);
                   setVisibleCount(6);
                 }}
-                className="w-full pl-8 pr-3 py-1.5 text-xs bg-[#050816] border border-blue-900/40 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
+                className="w-full pl-9 pr-3.5 py-2.5 text-xs sm:text-sm bg-[#050816] border border-blue-900/40 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 transition-colors"
               />
               {searchQuery && (
                 <button 
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs cursor-pointer"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs cursor-pointer"
                 >
                   ✕
                 </button>
@@ -544,7 +868,7 @@ export function SimpleCardRecommender({ onSelectCardForCalculator }: SimpleCardR
                   setSelectedBank(e.target.value);
                   setVisibleCount(6);
                 }}
-                className="w-full sm:w-36 px-2.5 py-1.5 text-xs bg-[#050816] border border-blue-900/40 rounded-lg text-slate-200 focus:outline-none focus:border-blue-500 cursor-pointer"
+                className="w-full sm:w-44 px-3 py-2.5 text-xs sm:text-sm bg-[#050816] border border-blue-900/40 rounded-xl text-slate-200 focus:outline-none focus:border-blue-500 cursor-pointer transition-colors"
               >
                 <option value="all">🏦 All Banks ({INDIAN_CREDIT_CARDS.length})</option>
                 {availableBanks.filter(b => b !== 'all').map(bank => (
@@ -558,7 +882,7 @@ export function SimpleCardRecommender({ onSelectCardForCalculator }: SimpleCardR
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="w-full sm:w-44 px-2.5 py-1.5 text-xs bg-[#050816] border border-blue-900/40 rounded-lg text-slate-200 focus:outline-none focus:border-blue-500 cursor-pointer"
+                className="w-full sm:w-48 px-3 py-2.5 text-xs sm:text-sm bg-[#050816] border border-blue-900/40 rounded-xl text-slate-200 focus:outline-none focus:border-blue-500 cursor-pointer transition-colors"
               >
                 <option value="savings">💰 Net Annual Savings</option>
                 <option value="score">🎯 Best Match Score</option>
@@ -570,7 +894,7 @@ export function SimpleCardRecommender({ onSelectCardForCalculator }: SimpleCardR
           </div>
 
           {/* Category Filter Tabs */}
-          <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-blue-900/30">
+          <div className="flex flex-wrap items-center gap-2 pt-2.5 border-t border-blue-900/30">
             {[
               { id: 'matched', label: '🎯 Top Matches' },
               { id: 'cashback', label: '🔥 Cashback' },
@@ -589,10 +913,10 @@ export function SimpleCardRecommender({ onSelectCardForCalculator }: SimpleCardR
                   setActiveTab(tab.id as FilterTab);
                   setVisibleCount(6);
                 }}
-                className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-all cursor-pointer ${
+                className={`px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
                   activeTab === tab.id
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'bg-[#050816] text-slate-400 border border-blue-900/40 hover:text-white'
+                    ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+                    : 'bg-[#050816] text-slate-400 border border-blue-900/40 hover:text-white hover:border-blue-700'
                 }`}
               >
                 {tab.label}
@@ -602,18 +926,18 @@ export function SimpleCardRecommender({ onSelectCardForCalculator }: SimpleCardR
         </div>
 
         {/* 1-CLICK SPENDER TEMPLATES (DOWN ABOVE "FOUND CARDS") */}
-        <div className="mb-4 bg-[#0a192f] border border-blue-900/40 rounded-xl p-3 shadow-md">
-          <div className="flex items-center justify-between mb-2 px-0.5">
-            <span className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-              <Flame className="w-3.5 h-3.5 text-amber-400" />
+        <div className="mb-6 bg-[#0a192f] border border-blue-900/40 rounded-2xl p-4 sm:p-5 shadow-lg">
+          <div className="flex items-center justify-between mb-3 px-0.5">
+            <span className="text-sm sm:text-base font-bold text-slate-100 flex items-center gap-2">
+              <Flame className="w-4 h-4 text-amber-400" />
               <span>1-Click Spender Templates (Select to auto-calculate & match cards):</span>
             </span>
-            <span className="text-[11px] text-blue-400 font-mono hidden sm:inline">
+            <span className="text-xs text-blue-400 font-mono hidden sm:inline font-semibold">
               ⚡ Instant Spender Presets
             </span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-2.5 sm:gap-3">
             {SPENDING_TEMPLATES.map((tpl) => {
               const isSelected = activeTemplateId === tpl.id;
               const tplMonthly = tpl.food + tpl.shopping + tpl.travel + tpl.bills;
@@ -622,26 +946,26 @@ export function SimpleCardRecommender({ onSelectCardForCalculator }: SimpleCardR
                   key={tpl.id}
                   id={`template-btn-${tpl.id}`}
                   onClick={() => handleApplyTemplate(tpl)}
-                  className={`p-2 rounded-lg text-left transition-all cursor-pointer flex flex-col justify-between border text-xs ${
+                  className={`p-3 sm:p-3.5 rounded-xl text-left transition-all duration-200 cursor-pointer flex flex-col justify-between border-2 min-h-[105px] ${
                     isSelected
-                      ? 'bg-blue-600/25 text-white border-blue-400 shadow-md shadow-blue-500/20 ring-2 ring-blue-400/50'
-                      : 'bg-[#050816] border-blue-900/40 text-slate-300 hover:border-blue-700/60 hover:bg-[#0e213d] hover:text-white'
+                      ? 'bg-blue-600/30 text-white border-blue-400 shadow-lg shadow-blue-500/25 ring-2 ring-blue-400/50 scale-[1.02]'
+                      : 'bg-[#050816] border-blue-900/50 text-slate-300 hover:border-blue-500/60 hover:bg-[#0d1e38] hover:text-white'
                   }`}
                   title={tpl.description}
                 >
-                  <div className="flex items-center justify-between gap-1 mb-1">
-                    <span className="text-base">{tpl.emoji}</span>
-                    <span className={`text-[9px] font-bold px-1 py-0.2 rounded ${
-                      isSelected ? 'bg-blue-400 text-blue-950 font-extrabold' : 'bg-slate-800 text-slate-300'
+                  <div className="flex items-center justify-between gap-1 mb-1.5">
+                    <span className="text-xl sm:text-2xl select-none">{tpl.emoji}</span>
+                    <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-md ${
+                      isSelected ? 'bg-blue-400 text-blue-950 font-black' : 'bg-slate-800 text-slate-300'
                     }`}>
                       {tpl.badge}
                     </span>
                   </div>
                   <div>
-                    <span className="font-bold leading-tight block text-white text-[11px]">
+                    <span className="font-bold leading-snug block text-white text-xs sm:text-sm">
                       {tpl.name}
                     </span>
-                    <span className={`text-[10px] leading-none mt-0.5 block ${isSelected ? 'text-blue-200 font-medium' : 'text-slate-400'}`}>
+                    <span className={`text-xs font-mono font-extrabold mt-1 block ${isSelected ? 'text-blue-200' : 'text-blue-400'}`}>
                       ₹{(tplMonthly / 1000).toFixed(0)}k/mo
                     </span>
                   </div>
