@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calculator, DollarSign, Sparkles, Check, Info, ShieldCheck, ArrowUpRight } from 'lucide-react';
+import { Calculator, DollarSign, Sparkles, Check, Info, ShieldCheck, ArrowUpRight, CreditCard } from 'lucide-react';
 import { INDIAN_CREDIT_CARDS } from '../data/cardsData';
 
 interface SimpleSavingsCalculatorProps {
@@ -17,6 +17,7 @@ export function SimpleSavingsCalculator({
   defaultWaiverSpend = 200000,
 }: SimpleSavingsCalculatorProps) {
   // Simple state inputs
+  const [selectedCardId, setSelectedCardId] = useState<string>('sbi-cashback');
   const [cardName, setCardName] = useState<string>(selectedCardName);
   const [monthlySpend, setMonthlySpend] = useState<number>(20000);
   const [cashbackPercent, setCashbackPercent] = useState<number>(defaultRewardRate);
@@ -43,13 +44,14 @@ export function SimpleSavingsCalculator({
 
   // Handle 1-Click Card Preset Selection inside calculator
   const handleSelectCardPreset = (cardId: string) => {
+    setSelectedCardId(cardId);
     const card = INDIAN_CREDIT_CARDS.find(c => c.id === cardId);
     if (!card) return;
     setCardName(card.name);
     setAnnualFee(card.annualFee);
     setFeeWaiverSpend(card.feeWaiverSpend);
     
-    // Set typical online reward rate
+    // Set typical top reward rate
     const rate = 
       card.id === 'sbi-cashback' ? 5 : 
       card.id === 'hdfc-swiggy' ? 6 : 
@@ -58,7 +60,12 @@ export function SimpleSavingsCalculator({
       card.id === 'icici-amazon-pay' ? 4 :
       card.id === 'axis-airtel' ? 7 :
       card.id === 'axis-ace' ? 4 :
-      card.id === 'hdfc-millennia' ? 5 : 3;
+      card.id === 'hdfc-infinia' ? 10 :
+      card.id === 'hdfc-dcb-metal' ? 10 :
+      card.id === 'indusind-eazydiner' ? 8 :
+      card.id === 'hsbc-cashback' ? 6 :
+      card.id === 'hdfc-millennia' ? 5 : 
+      card.cashbackBreakdown?.shopping || 3;
     setCashbackPercent(rate);
   };
 
@@ -74,7 +81,7 @@ export function SimpleSavingsCalculator({
             <span>Finance Savings Model</span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-            2. Simple Savings & Fee ROI Calculator
+            Simple Savings & Fee ROI Calculator
           </h2>
           <p className="text-sm text-slate-300">
             See how much real money you pocket each year after deducting bank annual fees and triggering fee waivers.
@@ -86,20 +93,33 @@ export function SimpleSavingsCalculator({
           
           {/* Left: Inputs (6 Cols) */}
           <div className="lg:col-span-6 bg-[#0a192f] border border-blue-900/40 rounded-2xl p-5 sm:p-6 space-y-5 shadow-xl shadow-black/40">
-            <div className="flex items-center justify-between border-b border-blue-900/40 pb-3">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Calculator className="w-4 h-4 text-emerald-400" />
-                <span>Selected Card:</span>
-              </h3>
-              <span className="text-xs font-semibold text-blue-300 bg-blue-500/10 px-2.5 py-1 rounded-lg border border-blue-500/30 truncate max-w-[220px]">
-                {cardName}
-              </span>
+            
+            {/* Card Selector Dropdown from all 50+ Cards */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-200 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <CreditCard className="w-3.5 h-3.5 text-blue-400" />
+                  <span>Choose Any Card ({INDIAN_CREDIT_CARDS.length} Available):</span>
+                </span>
+                <span className="text-[11px] text-blue-400 font-normal">Auto-loads fees & rates</span>
+              </label>
+              <select
+                value={selectedCardId}
+                onChange={(e) => handleSelectCardPreset(e.target.value)}
+                className="w-full px-3 py-2 text-xs bg-[#050816] border border-blue-900/40 rounded-xl text-white focus:outline-none focus:border-blue-500 cursor-pointer font-medium"
+              >
+                {INDIAN_CREDIT_CARDS.map(c => (
+                  <option key={c.id} value={c.id}>
+                    {c.bank} - {c.name} {c.annualFee === 0 ? '(₹0 Free)' : `(₹${c.annualFee}/yr)`}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* Quick 1-Click Card Selector Buttons */}
             <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-200 block">
-                1-Click Choose Popular Cards to Test:
+              <label className="text-xs font-bold text-slate-300 block">
+                Quick 1-Click Popular Picks:
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {[
@@ -109,11 +129,18 @@ export function SimpleSavingsCalculator({
                   { id: 'axis-airtel', name: 'Airtel Axis (25%)' },
                   { id: 'scapia-federal', name: 'Scapia (0% Forex)' },
                   { id: 'hdfc-tata-neu-infinity', name: 'Tata Neu UPI (10%)' },
+                  { id: 'hdfc-infinia', name: 'Infinia Metal (33%)' },
+                  { id: 'axis-ace', name: 'Axis ACE (5% Bills)' },
+                  { id: 'idfc-first-wow', name: 'IDFC WOW (0% Forex)' },
                 ].map((preset) => (
                   <button
                     key={preset.id}
                     onClick={() => handleSelectCardPreset(preset.id)}
-                    className="p-2 rounded-lg text-left text-xs bg-[#050816] hover:bg-blue-950/60 border border-blue-900/40 hover:border-blue-500/60 text-slate-300 hover:text-white transition-all cursor-pointer font-medium truncate"
+                    className={`p-2 rounded-lg text-left text-xs border transition-all cursor-pointer font-medium truncate ${
+                      selectedCardId === preset.id
+                        ? 'bg-blue-600/30 border-blue-400 text-white shadow-sm'
+                        : 'bg-[#050816] hover:bg-blue-950/60 border-blue-900/40 hover:border-blue-500/60 text-slate-300 hover:text-white'
+                    }`}
                   >
                     {preset.name}
                   </button>
@@ -132,7 +159,7 @@ export function SimpleSavingsCalculator({
               <input
                 type="range"
                 min="5000"
-                max="100000"
+                max="150000"
                 step="2500"
                 value={monthlySpend}
                 onChange={(e) => setMonthlySpend(Number(e.target.value))}
@@ -140,8 +167,8 @@ export function SimpleSavingsCalculator({
               />
               <div className="flex justify-between text-[11px] text-slate-400 pt-0.5 font-mono">
                 <span>₹5k/mo</span>
-                <span>₹50k/mo</span>
-                <span>₹1,00,000/mo</span>
+                <span>₹75k/mo</span>
+                <span>₹1,50,000/mo</span>
               </div>
             </div>
 
@@ -175,11 +202,11 @@ export function SimpleSavingsCalculator({
               <div className="flex justify-between items-center text-xs">
                 <span className="font-semibold text-slate-300">Annual Card Fee:</span>
                 <span className="font-mono font-bold text-slate-200">
-                  {annualFee === 0 ? '₹0 (Lifetime Free)' : `₹${annualFee}/year`}
+                  {annualFee === 0 ? '₹0 (Lifetime Free)' : `₹${annualFee.toLocaleString('en-IN')}/year`}
                 </span>
               </div>
               <div className="flex gap-2">
-                {[0, 499, 999, 1499, 2500].map((fee) => (
+                {[0, 499, 999, 1499, 2500, 5000].map((fee) => (
                   <button
                     key={fee}
                     onClick={() => setAnnualFee(fee)}
@@ -209,12 +236,12 @@ export function SimpleSavingsCalculator({
               <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider block">
                 💡 Estimated Net Yearly Savings
               </span>
-              <div className="text-3xl sm:text-4xl font-black text-white font-mono">
-                ₹{netAnnualSavings.toLocaleString('en-IN')}
+              <div className={`text-3xl sm:text-4xl font-black font-mono ${netAnnualSavings >= 0 ? 'text-white' : 'text-rose-400'}`}>
+                {netAnnualSavings >= 0 ? `₹${netAnnualSavings.toLocaleString('en-IN')}` : `-₹${Math.abs(netAnnualSavings).toLocaleString('en-IN')}`}
                 <span className="text-sm font-normal text-slate-400 ml-1">/year</span>
               </div>
               <p className="text-xs text-slate-300">
-                You gain <strong className="text-emerald-300">₹{netAnnualSavings.toLocaleString('en-IN')}</strong> in pure net financial value every year!
+                You pocket <strong className="text-emerald-300">₹{netAnnualSavings.toLocaleString('en-IN')}</strong> in pure net financial value every year!
               </p>
             </div>
 
@@ -240,7 +267,7 @@ export function SimpleSavingsCalculator({
                       ? `₹0 (Waived on ₹${(annualTotalSpend/100000).toFixed(1)}L annual spend)` 
                       : annualFee === 0 
                         ? '₹0 (Lifetime Free)' 
-                        : `-₹${annualFee}`}
+                        : `-₹${annualFee.toLocaleString('en-IN')}`}
                   </span>
                 </div>
 
@@ -262,7 +289,7 @@ export function SimpleSavingsCalculator({
                 {isFeeWaived ? (
                   <span className="text-emerald-300 font-semibold"> Great job! You automatically exceed the fee waiver threshold of ₹{feeWaiverSpend.toLocaleString('en-IN')} — saving you ₹{annualFee}/yr.</span>
                 ) : annualFee > 0 && feeWaiverSpend > 0 ? (
-                  <span> Spend ₹{(feeWaiverSpend - annualTotalSpend).toLocaleString('en-IN')} more this year to waive your ₹{annualFee} annual fee.</span>
+                  <span> Spend ₹{(feeWaiverSpend - annualTotalSpend).toLocaleString('en-IN')} more this year to waive your ₹{annualFee.toLocaleString('en-IN')} annual fee.</span>
                 ) : (
                   <span> This card has no annual fee or is 100% Lifetime Free.</span>
                 )}

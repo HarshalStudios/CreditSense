@@ -52,7 +52,7 @@ export function HeroSection({ onStart }: HeroSectionProps) {
               1. 1-Click Card Recommender
             </h3>
             <p className="text-[11px] text-slate-400 leading-relaxed">
-              Choose 1-click lifestyle templates or custom spends to compare 11 top Indian credit cards with real savings.
+              Choose 1-click lifestyle templates or custom spends to compare 50+ top Indian credit cards with real savings.
             </p>
           </div>
 

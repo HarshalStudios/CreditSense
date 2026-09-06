@@ -14,7 +14,7 @@ export interface CreditCardItem {
   name: string;
   bank: string;
   badge?: string;
-  cardType: 'Cashback' | 'Rewards' | 'Travel' | 'Shopping' | 'Lifetime Free' | 'Student Friendly' | 'Fuel' | 'Dining';
+  cardType: 'Cashback' | 'Rewards' | 'Travel' | 'Shopping' | 'Lifetime Free' | 'Student Friendly' | 'Fuel' | 'Dining' | 'Premium' | 'UPI';
   joiningFee: number;
   annualFee: number;
   feeWaiverSpend: number;
@@ -29,7 +29,7 @@ export interface CreditCardItem {
     other: number;
   };
   apr: number; // Annual Percentage Rate (e.g. 42% = 3.5%/mo)
-  forexMarkup: number; // e.g. 2.0% or 3.5%
+  forexMarkup: number; // e.g. 0.0%, 2.0%, or 3.5%
   redemptionFee: number;
   minIncomeRequired: number; // monthly income in INR
   idealFor: string[];
@@ -39,7 +39,7 @@ export interface CreditCardItem {
   accentColor: string;
   gradient: string;
   cardImageColor: string;
-  network: 'Visa' | 'Mastercard' | 'RuPay' | 'Amex';
+  network: 'Visa' | 'Mastercard' | 'RuPay' | 'Amex' | 'Diners Club';
   rupayUpi: boolean;
 }
 
